@@ -1,0 +1,16 @@
+[
+  {
+    "name": "default",
+    "prefix": "",
+    "permissions": [
+
+    ]
+  },
+  {
+    "name": "admin",
+    "prefix": "[Admin]",
+    "permissions": [
+      "*"
+    ]
+  }
+]

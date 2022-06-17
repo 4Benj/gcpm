@@ -1,0 +1,8 @@
+{
+  "name": "GCPM",
+  "description": "The Grasscutter Permission Manager.",
+  "version": "1.0.2-dev",
+  "authors": [ "4Benj" ],
+  
+  "mainClass": "com.benj4.gcpm.GCPMPlugin"
+}
