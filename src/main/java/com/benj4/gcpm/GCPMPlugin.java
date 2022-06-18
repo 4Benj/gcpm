@@ -1,5 +1,6 @@
 package com.benj4.gcpm;
 
+import com.benj4.gcpm.commands.GCPMCommand;
 import com.benj4.gcpm.handlers.GCPMPermissionHandler;
 import com.benj4.gcpm.objects.GCPMGroup;
 import com.google.gson.reflect.TypeToken;
@@ -73,7 +74,6 @@ public final class GCPMPlugin extends Plugin {
             }
 
             // Put the configuration into an instance of the config class.
-            this.configuration = Grasscutter.getGsonFactory().fromJson(new FileReader(config), PluginConfig.class);
         } catch (IOException exception) {
             this.logger.error("Failed to create config file.", exception);
         }
@@ -112,7 +112,18 @@ public final class GCPMPlugin extends Plugin {
         // Register event listeners.
         Grasscutter.getLogger().info("GCPM Enabled.");
         Grasscutter.setPermissionHandler(new GCPMPermissionHandler());
-        loadGroups();
+        getServer().getCommandMap().registerCommand("gcpm", new GCPMCommand());
+        try {
+            loadGroups();
+        } catch (FileNotFoundException e) {
+            Grasscutter.getLogger().error("Unable to load GCPMGroups file. ", e);
+        }
+
+        try {
+            loadConfig();
+        } catch (FileNotFoundException e) {
+            Grasscutter.getLogger().error("Unable to load GCPMConfig file. ", e);
+        }
     }
 
     /**
@@ -121,6 +132,7 @@ public final class GCPMPlugin extends Plugin {
     @Override public void onDisable() {
         Grasscutter.getLogger().info("GCPM Disabled.");
         Grasscutter.setPermissionHandler(new DefaultPermissionHandler());
+        getServer().getCommandMap().unregisterCommand("gcpm");
         this.Groups.clear();
     }
 
@@ -136,23 +148,25 @@ public final class GCPMPlugin extends Plugin {
         return this.Groups;
     }
 
-    private void loadGroups() {
-        try(InputStream is = new FileInputStream(new File(this.getDataFolder(), "groups.json"))) {
-            InputStreamReader fileReader = new InputStreamReader(is);
-            this.Groups.clear();
+    public void loadConfig() throws FileNotFoundException {
+        this.configuration = Grasscutter.getGsonFactory().fromJson(new FileReader(new File(this.getDataFolder(), "config.json")), PluginConfig.class);
+    }
 
-            List<GCPMGroup> groups = (List)Grasscutter.getGsonFactory().fromJson(fileReader, TypeToken.getParameterized(Collection.class, new Type[]{GCPMGroup.class}).getType());
-            if(groups.size() > 0) {
-                for (GCPMGroup group : groups) {
-                    this.Groups.put(group.name, group);
-                }
-                Grasscutter.getLogger().info("Groups successfully loaded.");
-            } else {
-                Grasscutter.getLogger().error("Unable to load groups. Groups size is 0.");
+    public boolean loadGroups() throws FileNotFoundException {
+        InputStream is = new FileInputStream(new File(this.getDataFolder(), "groups.json"));
+        InputStreamReader fileReader = new InputStreamReader(is);
+
+        List<GCPMGroup> groups = (List)Grasscutter.getGsonFactory().fromJson(fileReader, TypeToken.getParameterized(Collection.class, new Type[]{GCPMGroup.class}).getType());
+        if(groups.size() > 0) {
+            this.Groups.clear();
+            for (GCPMGroup group : groups) {
+                this.Groups.put(group.getName(), group);
             }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Grasscutter.getLogger().info("Groups successfully loaded.");
+            return true;
+        } else {
+            Grasscutter.getLogger().error("Unable to load groups. Groups size is 0.");
+            return false;
         }
     }
 }

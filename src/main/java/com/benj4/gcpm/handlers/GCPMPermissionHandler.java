@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class GCPMPermissionHandler implements PermissionHandler {
-    private final String GCPM_GROUP_PREFIX = "gcpmGroup";
+    public static final String GCPM_GROUP_PREFIX = "gcpmGroup";
 
     @Override
     public boolean EnablePermissionCommand() {
@@ -32,6 +32,7 @@ public class GCPMPermissionHandler implements PermissionHandler {
             if(!requiredPermission.isEmpty() && hasPermission(account.getPermissions(), requiredPermission)) {
                 return true;
             } else if (!requiredPermission.isEmpty() && permissionTaken(account.getPermissions(), requiredPermission)) {
+                sendPermissionError(sender);
                 return false;
             }
 
@@ -44,13 +45,18 @@ public class GCPMPermissionHandler implements PermissionHandler {
                 if(permissionGroup != null && hasPermission(permissionGroup.getPermissions(), requiredPermission)) {
                     return true;
                 } else if(permissionGroup != null && permissionTaken(permissionGroup.getPermissions(), requiredPermission)){
+                    sendPermissionError(sender);
                     return false;
                 }
             }
         }
 
-        CommandHandler.sendTranslatedMessage(sender, "commands.generic.permission_error", new Object[0]);
+        sendPermissionError(sender);
         return false;
+    }
+
+    public static void sendPermissionError(Player sender) {
+        CommandHandler.sendTranslatedMessage(sender, "commands.generic.permission_error", new Object[0]);
     }
 
     /**
