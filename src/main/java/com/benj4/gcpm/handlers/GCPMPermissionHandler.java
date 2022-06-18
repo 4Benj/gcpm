@@ -9,10 +9,7 @@ import emu.grasscutter.command.PermissionHandler;
 import emu.grasscutter.game.Account;
 import emu.grasscutter.game.player.Player;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class GCPMPermissionHandler implements PermissionHandler {
@@ -32,18 +29,22 @@ public class GCPMPermissionHandler implements PermissionHandler {
             String requiredPermission = sender == targetPlayer ? permissionNode : permissionNodeTargeted;
 
             // Check individual player permissions
-            if(requiredPermission.isEmpty() && hasPermission(account.getPermissions(), requiredPermission)) {
+            if(!requiredPermission.isEmpty() && hasPermission(account.getPermissions(), requiredPermission)) {
                 return true;
+            } else if (!requiredPermission.isEmpty() && permissionTaken(account.getPermissions(), requiredPermission)) {
+                return false;
             }
 
             // Check group permissions
-            List<String> permissionGroups = account.getPermissions().stream().filter(x -> x.startsWith(GCPM_GROUP_PREFIX + "$")).toList();
+            List<String> permissionGroupStrs = account.getPermissions().stream().filter(x -> x.startsWith(GCPM_GROUP_PREFIX + "$")).toList();
+            List<GCPMGroup> permissionGroups =
+                    GCPMPlugin.getInstance().getGroups().values().stream().filter(x -> permissionGroupStrs.contains(GCPM_GROUP_PREFIX + "$" + x.getName())).sorted(Comparator.comparingInt(GCPMGroup::getWeight).reversed()).toList();
 
-            for (String permissionGroupPerm : permissionGroups) {
-                String permissionGroupRawStr = permissionGroupPerm.substring((GCPM_GROUP_PREFIX + "$").length());
-                GCPMGroup permissionGroup = getPermissionGroup(permissionGroupRawStr);
-                if(permissionGroup != null && hasPermission(List.of(permissionGroup.permissions), requiredPermission)) {
+            for (GCPMGroup permissionGroup : permissionGroups) {
+                if(permissionGroup != null && hasPermission(permissionGroup.getPermissions(), requiredPermission)) {
                     return true;
+                } else if(permissionGroup != null && permissionTaken(permissionGroup.getPermissions(), requiredPermission)){
+                    return false;
                 }
             }
         }
@@ -52,39 +53,40 @@ public class GCPMPermissionHandler implements PermissionHandler {
         return false;
     }
 
-    public boolean hasPermission(List<String> permissionsList, String permission) {
-        if (permissionsList.contains("*") && permissionsList.size() == 1) {
-            return true;
-        } else {
-            List<String> permissions = Stream.of(permissionsList, Arrays.asList(Configuration.ACCOUNT.defaultPermissions)).flatMap(Collection::stream).distinct().toList();
-            if (permissions.contains(permission)) {
-                return true;
-            } else {
-                String[] permissionParts = permission.split("\\.");
-                Iterator var4 = permissions.iterator();
+    /**
+     * Check if player has a permission
+     * @param permissions The permission list (from the player or permission group)
+     * @param permission The permission node to check
+     * @return If the player has the permission
+     */
+    public static boolean hasPermission(List<String> permissions, String permission) {
+        if(permissions.contains("*") && permissions.size() == 1) return true;
 
-                String p;
-                do {
-                    if (!var4.hasNext()) {
-                        return permissions.contains("*");
-                    }
+        if (permissions.contains(permission)) return true;
 
-                    p = (String)var4.next();
-                    if (p.startsWith("-") && Account.permissionMatchesWildcard(p.substring(1), permissionParts)) {
-                        return false;
-                    }
-                } while(!Account.permissionMatchesWildcard(p, permissionParts));
-
-                return true;
-            }
+        String[] permissionParts = permission.split("\\.");
+        for (String p : permissions) {
+            if (p.startsWith("-") && Account.permissionMatchesWildcard(p.substring(1), permissionParts)) return false;
+            if (Account.permissionMatchesWildcard(p, permissionParts)) return true;
         }
+
+        return permissions.contains("*");
     }
 
-    public GCPMGroup getPermissionGroup(String name) {
-        if(GCPMPlugin.getInstance().getGroups().containsKey(name)) {
-            return GCPMPlugin.getInstance().getGroups().get(name);
-        } else {
-            return null;
+    /**
+     * Check if permission has the - prefix.
+     * @param permissions The permission list (from the player or permission group)
+     * @param permission The permission node to check
+     * @return If the permission has the - prefix
+     */
+    public static boolean permissionTaken(List<String> permissions, String permission) {
+        if (permissions.contains("-" + permission)) return true;
+
+        String[] permissionParts = permission.split("\\.");
+        for (String p : permissions) {
+            if (p.startsWith("-") && Account.permissionMatchesWildcard(p.substring(1), permissionParts)) return true;
         }
+
+        return false;
     }
 }
