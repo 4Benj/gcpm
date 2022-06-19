@@ -20,7 +20,6 @@ out
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
@@ -32,9 +31,11 @@ out
 hs_err_pid*
 
 # Ignore Gradle project-specific cache directory
-.gradle/
+/.gradle
+
 /bin
 .settings
-gradle
 .project
 .classpath
+/lib
+/*.jar
