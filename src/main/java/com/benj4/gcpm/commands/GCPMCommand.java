@@ -92,7 +92,7 @@ public class GCPMCommand implements CommandHandler {
 
     // /gcpm player <username|uid> <permission|perm|p|group|g> <add|remove> <permission|group>
     // /gcpm @uid <permission|perm|p|group|g> <add|remove> <permission|group>
-    public void playerCommand(Player sender, Player targetPlayer, List<String> args) {
+    private void playerCommand(Player sender, Player targetPlayer, List<String> args) {
         Account player; // <@uid||username||uid>
         String func; // <permission|perm|p|group|g>
         String op; // <add|remove>
@@ -148,7 +148,7 @@ public class GCPMCommand implements CommandHandler {
             case "add" -> {
                 player.addPermission(permissionString);
                 if(func == "permission") {
-                    permissionString = var;
+                    CommandHandler.sendMessage(sender, String.format("Successfully added {0} permission to player {1}", var, player.toString()));
                 } else if(func == "group") {
                     CommandHandler.sendMessage(sender, String.format("Successfully added {0} group to player {1}", var, player.toString()));
                 }
