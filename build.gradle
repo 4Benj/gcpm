@@ -23,11 +23,20 @@ dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 }
 
+compileJava.options.encoding = "UTF-8"
+compileTestJava.options.encoding = "UTF-8"
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
 group = 'com.benj4.gcpm'
 version = '1.0.0-dev'
 description = 'The Grasscutter Permission Manager.'
-sourceCompatibility = 17
-targetCompatibility = 17
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
 
 jar {    
     jar.baseName = 'gcpm-plugin'
@@ -54,8 +63,48 @@ jar {
 
 publishing {
     publications {
-        maven(MavenPublication) {
-            from(components.java)
+        mavenJava(MavenPublication) {
+            artifactId = 'gcpm'
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = 'GCPM'
+                description = 'The Grasscutter Permission Manager.'
+                url = 'https://github.com/4Benj/gcpm'
+                licenses {
+                    // todo
+                }
+                developers {
+                    developer {
+                        id = 'benj'
+                        name = '4Benj_'
+                        email = '4benj@4benj.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git@github.com:4Benj/gcpm.git'
+                    developerConnection = 'scm:git:ssh://github.com:4Benj/gcpm.git'
+                    url = 'https://github.com/4Benj/gcpm'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            println ("Publishing to 4benj-maven")
+            url 'https://repo.4benj.com/releases'
+            name '4benj-maven'
+            credentials {
+                username System.getenv('benj_maven_username')
+                password System.getenv('benj_maven_token')
+            }
         }
     }
 }
